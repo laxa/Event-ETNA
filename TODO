@@ -1,0 +1,5 @@
+- make a python package
+- configure dependencies
+- handle timeout / errors of intranet
+- make abstraction of the connector (could be something else than slack for example)
+- put hardcoded values in config file

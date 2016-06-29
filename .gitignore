@@ -87,3 +87,9 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# configuration file for the script
+config
+
+# folder for notes
+notes/*

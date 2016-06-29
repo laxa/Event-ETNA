@@ -1,0 +1,11 @@
+{
+    "refUser":007,
+    "cookie":"drop your PHPSESSID cookie here",
+    "promo":["promo 1 URL from trombi",
+        "promo 2 URL from trombi"
+    ],
+    "slackHook":"slack hook URL",
+    "slackChan":"toto",
+    "lastMessage":"this will be used by the script",
+    "env":"debug for debug or empty if production env"
+}

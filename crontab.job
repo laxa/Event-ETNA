@@ -1,0 +1,3 @@
+# line to add to crontab, flock is a binutil binary part of standart linux, it handles a lock file to prevent the script to have two instances at the same time
+
+*/2 * * * * /usr/bin/flock -n /tmp/notes.lockfile /path/to/script/NotesCronEvent.py --minutely
