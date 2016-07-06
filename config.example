@@ -1,11 +1,11 @@
 {
-    "refUser":007,
-    "cookie":"drop your PHPSESSID cookie here",
-    "promo":["promo 1 URL from trombi",
-        "promo 2 URL from trombi"
-    ],
-    "slackHook":"slack hook URL",
-    "slackChan":"toto",
-    "lastMessage":"this will be used by the script",
-    "env":"debug for debug or empty if production env"
+        "baseURL":"https://prepintra-api.etna-alternance.net/",
+        "trombiIds":[1,2,3,4], # ids for trombi
+        "refUSER":"blabl_t", # ref user
+        "refPROM":1, # refuser prom ID
+        "cookie":"authenticator cookie",
+        "slackHook": "slack hook URL",
+        "slackChan": "slack channel",
+        "lastMessage": "let that one empty",
+        "env":"debug" # could be empty for no debug, or debug
 }
