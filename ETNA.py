@@ -48,17 +48,18 @@ def get_data_from_diff(diff):
             with open("notes/" + u, "r") as f:
                 data = json.loads(f.read())
             try:
+                index = next(a for (a, d) in enumerate(data) if d["activity_id"] == diff[i]["activity_id"])
                 try:
-                    if "Non" in data[diff[i]["uv"]]["validation"]:
+                    if "Non" in data[index]["validation"]:
                         validation = "Non valide"
-                    elif "Valid" in data[diff[i]["uv"]]["validation"]:
+                    elif "Valid" in data[index]["validation"]:
                         validation = "Valide"
                     else:
                         validation = ""
                 except:
                     validation = "Introuvable"
-                notes.append(dict(user=u, note=data[diff[i]["uv"]]["student_mark"], validation=validation))
-                average += data[diff[i]["uv"]]["student_mark"]
+                notes.append(dict(user=u, note=data[index]["student_mark"], validation=validation))
+                average += data[index]["student_mark"]
                 count += 1
             except:
                 notes.append(dict(user=u, note=None, validation=None))
@@ -106,14 +107,14 @@ def get_diff(prev, cur):
             if cur[x]["validation"] != None:
                 msg += "Validation de `%s/%s`\n" % (cur[x]["uv_long_name"], cur[x]["activity_name"])
             if len(msg) > 0:
-                ret.append(dict(uv=x, msg=msg, note=cur[x]["student_mark"]))
+                ret.append(dict(activity_id=cur[x]["activity_id"], msg=msg, note=cur[x]["student_mark"]))
         else:
             if cur[x]["student_mark"] != prev[x]["student_mark"]:
                 msg += "Nouvelle note detectee `%s/%s`\n" % (cur[x]["uv_long_name"], cur[x]["activity_name"])
             if cur[x]["validation"] != prev[x]["validation"]:
                 msg += "Validation de `%s/%s`\n" % (cur[x]["uv_long_name"], cur[x]["activity_name"])
             if len(msg) > 0:
-                ret.append(dict(uv=x, msg=msg, note=cur[x]["student_mark"]))
+                ret.append(dict(activity_id=cur[x]["activity_id"], msg=msg, note=cur[x]["student_mark"]))
     return ret
 
 
