@@ -3,3 +3,6 @@
 - handle timeout / errors of intranet
 - make abstraction of the connector (could be something else than slack for example)
 - put hardcoded values in config file
+- handle authentification instead of cookie
+- add validation for promotion
+- handle the crappy charset of the school messing up between utf-8 and iso-xxxx

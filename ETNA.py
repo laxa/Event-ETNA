@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 
+import requests.packages.urllib3
 import requests
 import json
 import time
@@ -17,14 +18,59 @@ API endpoints:
 """
 
 def load_config():
-    with open("config", "r") as f:
-        return json.loads(f.read())
+    try:
+        with open("config", "r") as f:
+            return json.loads(f.read())
+    except:
+        print "Error while loading configuration"
+
 
 def save_config():
     global config
 
-    with open("config", "w") as f:
-        f.write(json.dumps(config, sort_keys=True, indent=4))
+    try:
+        with open("config", "w") as f:
+            f.write(json.dumps(config, sort_keys=True, indent=4))
+    except:
+        print "Error while saving configuration"
+
+
+def get_data_from_diff(diff):
+    global users
+
+    msg = ""
+    for i in range(0, len(diff)):
+        msg += diff[i]["msg"]
+        notes = []
+        average = 0
+        count = 0
+        for u in users:
+            with open("notes/" + u, "r") as f:
+                data = json.loads(f.read())
+            try:
+                try:
+                    if "Non" in data[diff[i]["uv"]]["validation"]:
+                        validation = "Non valide"
+                    elif "Valid" in data[diff[i]["uv"]]["validation"]:
+                        validation = "Valide"
+                    else:
+                        validation = ""
+                except:
+                    validation = "Introuvable"
+                notes.append(dict(user=u, note=data[diff[i]["uv"]]["student_mark"], validation=validation))
+                average += data[diff[i]["uv"]]["student_mark"]
+                count += 1
+            except:
+                notes.append(dict(user=u, note=None, validation=None))
+        notes = sorted(notes, key=lambda k : k["note"], reverse=True)
+        for n in notes:
+            if n["note"] != None:
+                msg += "%10s => %8d - %s\n" % (n["user"], n["note"], n["validation"])
+            else:
+                msg += "%10s => No note\n" % (n["user"])
+        msg += "Average => %.2f\n" % (average / count)
+    return msg
+
 
 def fetch_marks():
     global users
@@ -38,18 +84,57 @@ def fetch_marks():
             else:
                 f.write(json.dumps(ref))
 
+
+def fetch_users():
+    global users
+
+    for x in config["trombiIds"]:
+        data = json.loads(get(config["baseURL"] + "trombi/" + str(x)))
+        for a in data["students"]:
+            users[a["login"]] = set()
+            users[a["login"]] = x
+
+
 def get_diff(prev, cur):
+    ret = []
     for x in range(0, len(cur)):
-        if cur[x]["activity_id"] != prev[x]["activity_id"]:
-            print "activity"
+        msg = ""
+        if x > len(prev) - 1:
+            msg += "Nouvelle intitule detecte `%s/%s`\n" % (cur[x]["uv_long_name"], cur[x]["activity_name"])
+            if cur[x]["student_mark"] != None:
+                msg += "Nouvelle note detectee `%s/%s`\n" % (cur[x]["uv_long_name"], cur[x]["activity_name"])
+            if cur[x]["validation"] != None:
+                msg += "Validation de `%s/%s`\n" % (cur[x]["uv_long_name"], cur[x]["activity_name"])
+            if len(msg) > 0:
+                ret.append(dict(uv=x, msg=msg, note=cur[x]["student_mark"]))
+        else:
+            if cur[x]["student_mark"] != prev[x]["student_mark"]:
+                msg += "Nouvelle note detectee `%s/%s`\n" % (cur[x]["uv_long_name"], cur[x]["activity_name"])
+            if cur[x]["validation"] != prev[x]["validation"]:
+                msg += "Validation de `%s/%s`\n" % (cur[x]["uv_long_name"], cur[x]["activity_name"])
+            if len(msg) > 0:
+                ret.append(dict(uv=x, msg=msg, note=cur[x]["student_mark"]))
+    return ret
 
 
 def write_on_slack(msg):
     global config
 
-    # don't spam slack if we are debugging
-    if config["debug"] == "debug":
+    if len(msg) == 0 or msg == config["lastMessage"]:
+        return
+    if config["env"] == "debug":
         print msg
+        return
+    msg = msg.rstrip()
+    data = json.dumps(dict(channel=config["slackChan"], text=msg))
+    r = requests.post(config["slackHook"], data=dict(payload=data))
+    if config["env"] == "debug":
+        print "Slackhook return code: " + str(r.status_code)
+    if r.status_code != 200:
+        print "Slackpost failed"
+        # TODO: handle error
+    # don't spam slack if we are debugging
+
 
 # simple wrapper for requests
 def get(url):
@@ -59,12 +144,18 @@ def get(url):
         print url
     cookie = dict(authenticator=config["cookie"])
     r = requests.get(url, cookies=cookie)
+    if r.status_code == 401:
+        # reauthenticate
+        print "Authentication needed"
     if r.status_code != 200:
         # TODO: handle error on slack with timeout etc...
         print "Error: " + str(r.status_code)
     return r.text
 
+
 if __name__ == "__main__":
+    # disable SSL warning for deprecated python versions
+    requests.packages.urllib3.disable_warnings()
     # switch to the good directory, useful for crontab
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
     if not os.path.isdir("notes"):
@@ -72,23 +163,30 @@ if __name__ == "__main__":
 
     config = load_config()
 
-    # fetching users with ids of trombi
     users = dict()
-    for x in config["trombiIds"]:
-        data = json.loads(get(config["baseURL"] + "trombi/" + str(x)))
-        for a in data["students"]:
-            users[a["login"]] = set()
-            users[a["login"]] = x
 
     # on first execution, we need to fetch all data
     if not os.path.isfile("notes/" + config["refUSER"]):
+        fetch_users()
         fetch_marks()
         exit()
 
     # we will make our diff from here
-    with open("notes/" + config["refUSER"], "r") as f:
-        prev = json.loads(f.read())
-    ref = json.loads(get(config["baseURL"] + "terms/" + str(config["refPROM"]) + "/students/" + config["refUSER"] + "/marks"))
+    if config["env"] == "debug":
+        with open("test", "r") as f:
+            prev = json.loads(f.read())
+    else:
+        with open("notes/" + config["refUSER"], "r") as f:
+            prev = json.loads(f.read())
 
-    diff = get_diff(prev, ref)
+    cur = json.loads(get(config["baseURL"] + "terms/" + str(config["refPROM"]) + "/students/" + config["refUSER"] + "/marks"))
 
+    diff = get_diff(prev, cur)
+    if len(diff) == 0:
+        exit()
+
+    fetch_users()
+    if config["env"] != "debug":
+        fetch_marks()
+    msg = get_data_from_diff(diff)
+    write_on_slack(msg)
