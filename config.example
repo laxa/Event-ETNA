@@ -6,7 +6,7 @@
         "cookie":"authenticator cookie",
         "slackHook": "slack hook URL",
         "slackChan": "slack channel",
-        "lastMessage": "let that one empty",
+        "lastMessage": "leave this one empty",
         "env":"debug", # could be empty for no debug, or debug
         "timeout":0 # let that to 0
 }

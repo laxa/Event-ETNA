@@ -23,7 +23,7 @@ def load_config():
             return json.loads(f.read())
     except:
         print "Error while loading configuration"
-
+        exit()
 
 def save_config():
     global config
@@ -33,7 +33,7 @@ def save_config():
             f.write(json.dumps(config, sort_keys=True, indent=4))
     except:
         print "Error while saving configuration"
-
+        exit()
 
 def get_data_from_diff(diff):
     global users
@@ -123,6 +123,7 @@ def write_on_slack(msg):
 
     if len(msg) == 0 or msg == config["lastMessage"]:
         return
+    # don't spam slack if we are debugging
     if config["env"] == "debug":
         print msg
         return
@@ -134,7 +135,6 @@ def write_on_slack(msg):
     if r.status_code != 200:
         print "Slackpost failed"
         # TODO: handle error
-    # don't spam slack if we are debugging
 
 
 # simple wrapper for requests
@@ -184,6 +184,8 @@ if __name__ == "__main__":
 
     diff = get_diff(prev, cur)
     if len(diff) == 0:
+        if config["env"] == "debug":
+            print "No diff detected"
         exit()
 
     fetch_users()
