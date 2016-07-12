@@ -101,7 +101,7 @@ def get_diff(prev, cur):
     for x in range(0, len(cur)):
         msg = ""
         if x > len(prev) - 1:
-            msg += "Nouvelle intitule detecte `%s/%s`\n" % (cur[x]["uv_long_name"], cur[x]["activity_name"])
+            msg += "Nouvel intitule detecte `%s/%s`\n" % (cur[x]["uv_long_name"], cur[x]["activity_name"])
             if cur[x]["student_mark"] != None:
                 msg += "Nouvelle note detectee `%s/%s`\n" % (cur[x]["uv_long_name"], cur[x]["activity_name"])
             if cur[x]["validation"] != None:
@@ -130,8 +130,6 @@ def write_on_slack(msg):
     msg = msg.rstrip()
     data = json.dumps(dict(channel=config["slackChan"], text=msg))
     r = requests.post(config["slackHook"], data=dict(payload=data))
-    if config["env"] == "debug":
-        print "Slackhook return code: " + str(r.status_code)
     if r.status_code != 200:
         print "Slackpost failed"
         # TODO: handle error
