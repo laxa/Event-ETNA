@@ -25,6 +25,7 @@ def load_config():
         print "Error while loading configuration"
         exit()
 
+
 def save_config():
     global config
 
@@ -34,6 +35,7 @@ def save_config():
     except:
         print "Error while saving configuration"
         exit()
+
 
 def get_data_from_diff(diff):
     global users
@@ -142,13 +144,30 @@ def get(url):
     if config["env"] == "debug":
         print url
     cookie = dict(authenticator=config["cookie"])
-    r = requests.get(url, cookies=cookie)
+    try:
+        r = requests.get(url, cookies=cookie)
+    except requests.exceptions.RequestException as e:
+        msg = e.message.reason.message[e.message.reason.message.find("["):]
+        if config["timeout"] == 0:
+            msg = "Intranet: " + msg
+            write_on_slack(msg)
+        config["timeout"] += 2 # 2 is the number of minutes between each crontab execution
+        save_config()
+        exit()
     if r.status_code == 401:
-        # reauthenticate
+        # reauthenticate (apparently that should never happen, sessions are never destroyed...)
         print "Authentication needed"
     if r.status_code != 200:
-        # TODO: handle error on slack with timeout etc...
-        print "Error: " + str(r.status_code)
+        if config["timeout"] == 0:
+            msg = "Intranet returned: " + str(r.status_code)
+            write_on_slack(msg)
+        config["timeout"] += 2 # 2 is the number of minutes between each crontab execution
+        save_config()
+        exit()
+    if config["timeout"] > 0:
+        write_on_slack("Intranet is back online after %d minutes of timeout" % config["timeout"])
+        config["timeout"] == 0
+        save_config()
     return r.text
 
 
