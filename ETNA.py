@@ -166,7 +166,7 @@ def get(url):
         exit()
     if config["timeout"] > 0:
         write_on_slack("Intranet is back online after %d minutes of timeout" % config["timeout"])
-        config["timeout"] == 0
+        config["timeout"] = 0
         save_config()
     return r.text
 
