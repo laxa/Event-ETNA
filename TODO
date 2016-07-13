@@ -3,3 +3,4 @@
 - make abstraction of the connector (could be something else than slack for example)
 - handle authentification instead of cookie
 - handle the crappy charset of the school messing up between utf-8 and iso-xxxx
+- handle errors on slack_hook
