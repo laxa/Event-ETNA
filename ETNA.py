@@ -37,6 +37,13 @@ def save_config():
         exit()
 
 
+def get_activity_in_list(activity, json_list):
+    for x in json_list:
+        if x["activity_id"] == activity:
+            return x
+    return None
+
+
 def get_data_from_diff(diff):
     global users
 
@@ -71,7 +78,8 @@ def get_data_from_diff(diff):
                 msg += "%10s => %8d - %s\n" % (n["user"], n["note"], n["validation"])
             else:
                 msg += "%10s => No note\n" % (n["user"])
-        msg += "Average => %.2f\n" % (average / count)
+        if count > 0:
+            msg += "Average => %.2f\n" % (average / count)
     return msg
 
 
@@ -100,23 +108,24 @@ def fetch_users():
 
 def get_diff(prev, cur):
     ret = []
-    for x in range(0, len(cur)):
+    for e in cur:
         msg = ""
-        if x > len(prev) - 1:
-            msg += "Nouvel intitule detecte `%s/%s`\n" % (cur[x]["uv_long_name"], cur[x]["activity_name"])
-            if cur[x]["student_mark"] != None:
-                msg += "Nouvelle note detectee `%s/%s`\n" % (cur[x]["uv_long_name"], cur[x]["activity_name"])
-            if cur[x]["validation"] != None:
-                msg += "Validation de `%s/%s`\n" % (cur[x]["uv_long_name"], cur[x]["activity_name"])
+        prev_elem = get_activity_in_list(e["activity_id"], prev)
+        if prev_elem == None:
+            msg += "Nouvel intitule detecte `%s/%s`\n" % (e["uv_long_name"], e["activity_name"])
+            if e["student_mark"] != None:
+                msg += "Nouvelle note detectee `%s/%s`\n" % (e["uv_long_name"], e["activity_name"])
+            if e["validation"] != None:
+                msg += "Validation de `%s/%s`\n" % (e["uv_long_name"], e["activity_name"])
             if len(msg) > 0:
-                ret.append(dict(activity_id=cur[x]["activity_id"], msg=msg, note=cur[x]["student_mark"]))
+                ret.append(dict(activity_id=e["activity_id"], msg=msg, note=e["student_mark"]))
         else:
-            if cur[x]["student_mark"] != prev[x]["student_mark"]:
-                msg += "Nouvelle note detectee `%s/%s`\n" % (cur[x]["uv_long_name"], cur[x]["activity_name"])
-            if cur[x]["validation"] != prev[x]["validation"]:
-                msg += "Validation de `%s/%s`\n" % (cur[x]["uv_long_name"], cur[x]["activity_name"])
+            if e["student_mark"] != prev_elem["student_mark"]:
+                msg += "Nouvelle note detectee `%s/%s`\n" % (e["uv_long_name"], e["activity_name"])
+            if e["validation"] != prev_elem["validation"]:
+                msg += "Validation de `%s/%s`\n" % (e["uv_long_name"], e["activity_name"])
             if len(msg) > 0:
-                ret.append(dict(activity_id=cur[x]["activity_id"], msg=msg, note=cur[x]["student_mark"]))
+                ret.append(dict(activity_id=e["activity_id"], msg=msg, note=e["student_mark"]))
     return ret
 
 
