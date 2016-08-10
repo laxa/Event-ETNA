@@ -156,7 +156,10 @@ def get(url):
     try:
         r = requests.get(url, cookies=cookie)
     except requests.exceptions.RequestException as e:
-        msg = e.message.reason.message[e.message.reason.message.find("["):]
+        try:
+            msg = e.message.reason.message[e.message.reason.message.find("["):]
+        except:
+            pass
         if config["timeout"] == 0:
             msg = "Intranet: " + msg
             write_on_slack(msg)
