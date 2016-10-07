@@ -53,33 +53,34 @@ def get_data_from_diff(diff):
         notes = []
         average = 0
         count = 0
-        for u in users:
-            with open("notes/" + u, "r") as f:
-                data = json.loads(f.read())
-            try:
-                index = next(a for (a, d) in enumerate(data) if d["activity_id"] == diff[i]["activity_id"])
+        if diff[i]["note"]:
+            for u in users:
+                with open("notes/" + u, "r") as f:
+                    data = json.loads(f.read())
                 try:
-                    if "Non" in data[index]["validation"]:
-                        validation = "Non valide"
-                    elif "Valid" in data[index]["validation"]:
-                        validation = "Valide"
-                    else:
-                        validation = ""
+                    index = next(a for (a, d) in enumerate(data) if d["activity_id"] == diff[i]["activity_id"])
+                    try:
+                        if "Non" in data[index]["validation"]:
+                            validation = "Non valide"
+                        elif "Valid" in data[index]["validation"]:
+                            validation = "Valide"
+                        else:
+                            validation = ""
+                    except:
+                        validation = "Introuvable"
+                    notes.append(dict(user=u, note=data[index]["student_mark"], validation=validation))
+                    average += data[index]["student_mark"]
+                    count += 1
                 except:
-                    validation = "Introuvable"
-                notes.append(dict(user=u, note=data[index]["student_mark"], validation=validation))
-                average += data[index]["student_mark"]
-                count += 1
-            except:
-                notes.append(dict(user=u, note=None, validation=None))
-        notes = sorted(notes, key=lambda k : k["note"], reverse=True)
-        for n in notes:
-            if n["note"] != None:
-                msg += "%10s => %8d - %s\n" % (n["user"], n["note"], n["validation"])
-            else:
-                msg += "%10s => No note\n" % (n["user"])
-        if count > 0:
-            msg += "Average => %.2f\n" % (average / count)
+                    notes.append(dict(user=u, note=None, validation=None))
+            notes = sorted(notes, key=lambda k : k["note"], reverse=True)
+            for n in notes:
+                if n["note"] != None:
+                    msg += "%10s => %8d - %s\n" % (n["user"], n["note"], n["validation"])
+                else:
+                    msg += "%10s => No note\n" % (n["user"])
+            if count > 0:
+                msg += "Average => %.2f\n" % (average / count)
     return msg
 
 
@@ -157,9 +158,13 @@ def get(url):
         r = requests.get(url, cookies=cookie)
     except requests.exceptions.RequestException as e:
         try:
+            print "1: " + e.message.reason.message[e.message.reason]
+            print "2: " + e.message.reason.message[e.message.reason.message]
+            print "3: " + e.message.reason
+            print "4: " + e.meassage.reason.message
             msg = e.message.reason.message[e.message.reason.message.find("["):]
         except:
-            pass
+            msg = "unknown error"
         if config["timeout"] == 0:
             msg = "Intranet: " + msg
             write_on_slack(msg)
