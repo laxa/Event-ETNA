@@ -76,7 +76,7 @@ def get_data_from_diff(diff):
             notes = sorted(notes, key=lambda k : k["note"], reverse=True)
             for n in notes:
                 if n["note"] != None:
-                    msg += "%10s => %8d - %s\n" % (n["user"], n["note"], n["validation"])
+                    msg += "%10s => %0.1f - %s\n" % (n["user"], n["note"], n["validation"])
                 else:
                     msg += "%10s => No note\n" % (n["user"])
             if count > 0:
